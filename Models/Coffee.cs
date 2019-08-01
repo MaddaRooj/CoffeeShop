@@ -16,7 +16,7 @@ namespace CoffeeShop.Models
         public string Title { get; set; }
 
         [Required]
-        [IgnoreDataMember]
+        //[IgnoreDataMember] This tag will make this property hidden in the resulting json data
         [MaxLength(50, ErrorMessage = "Bean type way too long!")]
         public string BeanType { get; set; }
     }

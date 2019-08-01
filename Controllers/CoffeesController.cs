@@ -30,17 +30,17 @@ namespace CoffeeShop.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Coffee>> Get([FromQuery] string beanType, [FromQuery] string sortBy)
+        public ActionResult<List<Coffee>> Get([FromQuery] string beanType/*, [FromQuery] string sortBy*/)
         {
             if (beanType == null)
             {
                 beanType = "";
             };
 
-            if (sortBy.ToLower() != "beantype" && sortBy == null)
-            {
-                sortBy = "Id";
-            };
+            //if (sortBy.ToLower() != "beantype" && sortBy == null)
+            //{
+            //    sortBy = "Id";
+            //};
 
             using (SqlConnection conn = Connection)
             {
@@ -54,7 +54,7 @@ namespace CoffeeShop.Controllers
                             WHERE BeanType LIKE '%' + @beanType + '%'";
 
                     cmd.Parameters.Add(new SqlParameter("@beanType", beanType));
-                    cmd.Parameters.Add(new SqlParameter("@sorted", sortBy));
+                    //cmd.Parameters.Add(new SqlParameter("@sorted", sortBy));
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Coffee> coffees = new List<Coffee>();
 
@@ -229,6 +229,5 @@ namespace CoffeeShop.Controllers
                 }
             }
         }
-
     }
 }
