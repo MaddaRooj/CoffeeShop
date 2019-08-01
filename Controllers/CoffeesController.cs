@@ -30,14 +30,31 @@ namespace CoffeeShop.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Coffee>> Get()
+        public ActionResult<List<Coffee>> Get([FromQuery] string beanType, [FromQuery] string sortBy)
         {
+            if (beanType == null)
+            {
+                beanType = "";
+            };
+
+            if (sortBy.ToLower() != "beantype" && sortBy == null)
+            {
+                sortBy = "Id";
+            };
+
             using (SqlConnection conn = Connection)
             {
+
                 conn.Open();
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT Id, Title, BeanType FROM Coffee";
+                    cmd.CommandText = @"
+                            SELECT Id, Title, BeanType 
+                            FROM Coffee
+                            WHERE BeanType LIKE '%' + @beanType + '%'";
+
+                    cmd.Parameters.Add(new SqlParameter("@beanType", beanType));
+                    cmd.Parameters.Add(new SqlParameter("@sorted", sortBy));
                     SqlDataReader reader = cmd.ExecuteReader();
                     List<Coffee> coffees = new List<Coffee>();
 
@@ -118,5 +135,100 @@ namespace CoffeeShop.Controllers
                 }
             }
         }
+
+        [HttpPut("{id}")]
+        public ActionResult<Coffee> Put([FromRoute] int id, [FromRoute] Coffee coffee)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Coffee
+                                            SET Title = @title,
+                                                BeanType = @beanType
+                                            WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@title", coffee.Title));
+                        cmd.Parameters.Add(new SqlParameter("@beanType", coffee.BeanType));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!CoffeeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public ActionResult<Coffee> Delete([FromRoute] int id)
+        {
+            try
+            {
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"DELETE FROM Coffee WHERE Id = @id";
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return new StatusCodeResult(StatusCodes.Status204NoContent);
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                if (!CoffeeExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        private bool CoffeeExists(int id)
+        {
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT Id, Title, BeanType
+                        FROM Coffee
+                        WHERE Id = @id";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader.Read();
+                }
+            }
+        }
+
     }
 }
